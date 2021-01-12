@@ -40,7 +40,14 @@ module.exports = {
         httpOnly: true,
         sameSite:'none',
       });
-      res.status(200).send({accessToken:accesstoken, message:'login success'});
+      res.status(200).send({
+        userinfo:{
+          email:userInfo.email,
+          username:userInfo.username
+        },
+        accessToken:accesstoken, 
+        message:'login success'
+      });
     }
   },
   
