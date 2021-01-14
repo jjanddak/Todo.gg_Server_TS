@@ -1,4 +1,4 @@
-const { user } = require("../models");
+const { user, project, contributer, taskCard } = require("../models");
 // const sequelize = require("sequelize");
 const jwt = require('jsonwebtoken');
 
@@ -49,6 +49,135 @@ module.exports = {
         message:'login success'
       });
     }
+  },
+
+  getProjectList: async (req, res) => {
+    let authorization = req.headers["authorization"];
+    const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+    
+    //1. 엑세스토큰이 유효한지 확인
+    let userInfo;
+    let verifyAccessToken = () => {
+      if(!accessToken){
+        return null;
+      }
+      try{
+        return jwt.verify(accessToken, process.env.ACCESS_SECRET);
+      }catch(err){
+        return null;
+      }
+    }
+    
+    userInfo=verifyAccessToken();
+
+    //1-1. 엑세스 토큰이 만료되었을 때
+    if(!userInfo){
+      const cookieToken=req.cookies.refreshToken;
+      if(!cookieToken){
+        return res.status(400).json({data: null, message: 'refresh token not provided'})
+      }
+      //2. refresh token이 유효한지, 서버가 가지고 있는 비밀 키로 생성한 것이 맞는지 확인합니다.
+      let verifyToken = (token) => {
+        if(!token){
+          return null;
+        }
+        try{
+          return jwt.verify(token, process.env.REFRESH_SECRET);
+        }catch(err){
+          return null;
+        }
+      }
+      userInfo=verifyToken(cookieToken);
+      const newAccessToken=jwt.sign({
+        username:userInfo.username,
+        profile:userInfo.profile,
+        email:userInfo.email,
+        createdAt:userInfo.createdAt,
+        updatedAt:userInfo.updatedAt,
+        iat:Math.floor(Date.now() / 1000),
+        exp:Math.floor(Date.now() / 1000) + (60 * 60 * 24)
+      },process.env.ACCESS_SECRET);
+      userInfo.newAccessToken=newAccessToken;
+      if(!userInfo){
+        res.status(400).send({message:"invalid refreshToken"});
+      }
+    }
+
+    const {email} = userInfo;
+    //3. DB 조작
+    await user.findOne({
+      where:{
+        email:email
+      },
+      attributes:["id","username","email","profile"],
+      include: [
+        {
+          model: contributer,
+          attributes:["project_id","user_id"],
+          include : [
+            {
+              model: project,
+              attributes:["id","title","description","manager_id","start_date","end_date"],
+              include: [
+              {
+                model: taskCard,
+                attributes:["project_id","content","state"],
+              },
+              {
+                model:contributer,
+                attributes:["project_id","user_id"],
+                include:[{
+                  model:user,
+                  attributes:["profile","username"],
+                }]
+              },
+              {
+                model:user,
+                attributes:["profile"]
+              }
+            ]
+            }
+          ]
+        },
+      ]
+      }).then(data=>{
+        delete data.dataValues.password;
+        let taskCardsArr=[];
+        data.dataValues.contributers.map(ele=>{
+          let countObj={todo:0,inprogress:0,done:0};
+          countObj.project_id=ele.project_id;
+          for(let i=0;i<ele.project.taskCards.length;i++){
+            if(ele.project.taskCards[i].state=="todo"){
+              if(countObj.todo<1){
+                countObj.todo=1;
+              }else{
+                countObj.todo++;
+              }
+            }
+            if(ele.project.taskCards[i].state=="inprogress"){
+              if(countObj.inprogress<1){
+                countObj.inprogress=1;
+              }else{
+                countObj.inprogress++;
+              }
+            }
+            if(ele.project.taskCards[i].state=="done"){
+              if(countObj.done<1){
+                countObj.done=1;
+              }else{
+                countObj.done++;
+              }
+            }
+          }
+          taskCardsArr.push(countObj);
+        })
+        data.dataValues.taskCardCount=taskCardsArr;
+        if(userInfo.newAccessToken){
+          res.status(200).send({projectList:data, accessToken: userInfo.newAccessToken});
+        }else{
+          res.status(200).send({projectList:data});
+        }
+      }).catch((err)=>console.log(err));
   },
   
   SignUp : async (req, res) => {
