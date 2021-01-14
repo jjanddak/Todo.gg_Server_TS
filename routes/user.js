@@ -14,4 +14,7 @@ router.post("/checkEmail", userController.CheckEmail);
 //POST user/checkUsername
 router.post("/checkUsername", userController.CheckUsername);
 
+//GET user/LogOut
+router.get("/logout", userController.logout)
+
 module.exports = router;

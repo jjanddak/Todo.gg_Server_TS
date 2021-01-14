@@ -94,5 +94,8 @@ module.exports = {
 		} else {
 			res.status(200).send({message:"valid"});
 		}
-	}
+  },
+  logout : async (req, res) => {
+    res.clearCookie("refreshToken").send({message:"clear cookie"})
+  }
 }
