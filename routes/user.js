@@ -17,4 +17,7 @@ router.post("/checkUsername", userController.CheckUsername);
 //POST user/deleteUser
 router.post("/deleteUser", userController.DeleteUser)
 
+//GET user/LogOut
+router.get("/logout", userController.logout)
+
 module.exports = router;

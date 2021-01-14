@@ -95,6 +95,7 @@ module.exports = {
 			res.status(200).send({message:"valid"});
 		}
   },
+  
   DeleteUser : async (req, res) => {
     const sess = req.session
     const deleteUserInfo = await user.destroy({
@@ -107,5 +108,9 @@ module.exports = {
     } else {
       res.status(200).send({message : "Good!"})
     }
+  },
+  
+  logout : async (req, res) => {
+    res.clearCookie("refreshToken").send({message:"clear cookie"})
   }
 }
