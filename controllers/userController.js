@@ -94,5 +94,18 @@ module.exports = {
 		} else {
 			res.status(200).send({message:"valid"});
 		}
-	}
+  },
+  DeleteUser : async (req, res) => {
+    const sess = req.session
+    const deleteUserInfo = await user.destroy({
+      where : {
+        username : sess.username
+      }
+    }).catch(err => {console.log(err)})
+    if(!deleteUserInfo){
+      res.status(404).send({message : "Not Delete"})
+    } else {
+      res.status(200).send({message : "Good!"})
+    }
+  }
 }
