@@ -97,12 +97,46 @@ module.exports = {
   },
   
   DeleteUser : async (req, res) => {
-    const sess = req.session
+    let authorization = req.headers["authorization"];
+    const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+    let userInfo;
+
+    //1. 엑세스토큰이 유효한지 확인
+    try{
+      userInfo=jwt.verify(accessToken, process.env.ACCESS_SECRET);
+    }catch(err){
+      console.log(err);
+    }
+
+    //1-1. 엑세스 토큰이 만료되었을 때
+    if(!userInfo){
+      const cookieToken=req.cookies.refreshToken;
+      console.log('cookietoken:'+cookieToken)
+      if(!cookieToken){
+        return res.json({data: null, message: 'refresh token not provided'})
+      }
+      //2. refresh token이 유효한지, 서버가 가지고 있는 비밀 키로 생성한 것이 맞는지 확인합니다.
+      let verifyToken = (token) => {
+        if(!token){
+          return null;
+        }
+        try{
+          return jwt.verify(token, process.env.REFRESH_SECRET);
+        }catch(err){
+          return null;
+        }
+      }
+      userInfo=verifyToken(cookieToken);
+    }
+
+    //3. DB 조작
     const deleteUserInfo = await user.destroy({
       where : {
-        username : sess.username
+        username : userInfo.username
       }
     }).catch(err => {console.log(err)})
+
+    //4. 응답
     if(!deleteUserInfo){
       res.status(404).send({message : "Not Delete"})
     } else {
