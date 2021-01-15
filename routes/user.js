@@ -15,7 +15,10 @@ router.post("/checkEmail", userController.CheckEmail);
 router.post("/checkUsername", userController.CheckUsername);
 
 //POST user/deleteUser
-router.post("/deleteUser", userController.DeleteUser)
+router.post("/deleteUser", userController.DeleteUser);
+
+//POST user/updateUserinfo
+router.post("/updateUserinfo", userController.updateUserinfo)
 
 //GET user/LogOut
 router.get("/logout", userController.logout)

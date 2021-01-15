@@ -146,5 +146,92 @@ module.exports = {
   
   logout : async (req, res) => {
     res.clearCookie("refreshToken").send({message:"clear cookie"})
+  },
+
+  updateUserinfo : async (req, res) => {
+
+    let authorization = req.headers["authorization"];
+    const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+    let userInfo;
+
+    //1. 엑세스토큰이 유효한지 확인
+    const actokenverify = () => {
+    try{
+      return jwt.verify(accessToken, process.env.ACCESS_SECRET);
+    }catch(err){
+      console.log(err);
+      return null
+    }
+  }
+
+  userInfo=actokenverify();
+
+    // 1-1. 엑세스 토큰이 만료되었을 때
+    if(!userInfo){
+      const cookieToken=req.cookies.refreshToken;
+      // console.log('cookietoken:'+cookieToken)
+      if(!cookieToken){
+        return res.json({data: null, message: 'refresh token not provided'})
+      }
+      //2. refresh token이 유효한지, 서버가 가지고 있는 비밀 키로 생성한 것이 맞는지 확인합니다.
+      let verifyToken = (token) => {
+        if(!token){
+          return null;
+        }
+        try{
+          return jwt.verify(token, process.env.REFRESH_SECRET);
+        }catch(err){
+          return null;
+        }
+      }
+      userInfo=verifyToken(cookieToken);
+      userInfo.refreshToken = true
+      if(!userInfo){
+        return res.json({message:"refresh token invaild"})
+      }
+      
+    }
+
+    const body = req.body
+    
+      const result = await user.update({
+        profile : body.profile,
+        username : body.username,
+        password : body.password
+      },
+      {
+        where : {
+        email:userInfo.email
+      }
+    }).catch(err => {console.log(err)})
+      const userinfo = await user.findOne({
+        where : {
+          email : userInfo.email
+        }
+      }).catch(err=>{console.log(err)})
+      if(userInfo.refreshToken){
+        const accesstoken=jwt.sign({
+          email:userinfo.email,
+          profile:userinfo.profile,
+          username:userinfo.username,
+          createdAt:userinfo.createdAt,
+          updatedAt:userinfo.updatedAt,
+          iat:Math.floor(Date.now() / 1000),
+          exp:Math.floor(Date.now() / 1000) + (60 * 60*24)
+        },process.env.ACCESS_SECRET);
+        userinfo.accessToken = accesstoken
+      }
+
+      if(result[0]!==1){
+        res.status(400).send({message:"update failed"})
+      } else {
+        body.username = userinfo.username
+        if(userInfo.refreshToken === true){
+          res.status(200).send({message:"userinfo updated",username:userinfo.username,profile:userinfo.profile,accessToken:userinfo.accessToken})
+        }else{
+          res.status(200).send({message:"userinfo updated",username:userinfo.username,profile:userinfo.profile})
+        }
+      }
+    
   }
 }
