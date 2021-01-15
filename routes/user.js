@@ -14,6 +14,12 @@ router.post("/checkEmail", userController.CheckEmail);
 //POST user/checkUsername
 router.post("/checkUsername", userController.CheckUsername);
 
+//POST user/callback
+router.post("/callback", userController.GitHub_SocialLogin);
+
+//POST user/githubLogin
+router.post("/githubLogin", userController.GitHub_SignUpNLogin);
+
 //POST user/deleteUser
 router.post("/deleteUser", userController.DeleteUser)
 
