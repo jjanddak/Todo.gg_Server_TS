@@ -20,4 +20,10 @@ router.post("/callback", userController.GitHub_SocialLogin);
 //POST user/githubLogin
 router.post("/githubLogin", userController.GitHub_SignUpNLogin);
 
+//POST user/deleteUser
+router.post("/deleteUser", userController.DeleteUser)
+
+//GET user/LogOut
+router.get("/logout", userController.logout)
+
 module.exports = router;

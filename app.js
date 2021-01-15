@@ -6,6 +6,7 @@ const userRouter = require('./routes/user');
 const fs = require("fs");
 const https = require("https");
 const cookieParser = require("cookie-parser");
+const userController = require("./controllers/userController");
 const privateKey = fs.readFileSync("../key.pem", "utf8");
 const certificate = fs.readFileSync("../cert.pem", "utf8");
 const credentials = { key: privateKey, cert: certificate };
@@ -27,6 +28,7 @@ app.use(
 
 app.use(express.json());
 
+app.post('/', userController.getProjectList);
 app.use('/user', userRouter);
 
 const httpsServer = https.createServer(credentials, app);
