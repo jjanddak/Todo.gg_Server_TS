@@ -26,6 +26,9 @@ router.post("/deleteUser", userController.DeleteUser);
 //POST user/updateUserinfo
 router.post("/updateUserinfo", userController.updateUserinfo)
 
+//POST user/oneGet
+router.post("/getOne", userController.GetUserInfo)
+
 //GET user/LogOut
 router.get("/logout", userController.logout)
 

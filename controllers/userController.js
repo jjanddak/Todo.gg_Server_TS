@@ -360,6 +360,20 @@ module.exports = {
   logout : async (req, res) => {
     res.clearCookie("refreshToken").send({message:"clear cookie"})
   },
+  
+  GetUserInfo : async (req, res) => {
+    const body = req.body
+    const UserInfo = await user.findOne({
+      where : {
+        username : body.username
+      }
+    }).catch(err => {console.log(err)})
+    if(!UserInfo){
+      res.status(404).send({message:"user doesn't exists"})
+    } else {
+      res.status(200).json({userinfo:{email:UserInfo.email, username:UserInfo.username, profile:UserInfo.profile}})
+    }
+  },
 
   updateUserinfo : async (req, res) => {
 
@@ -445,6 +459,5 @@ module.exports = {
           res.status(200).send({message:"userinfo updated",username:userinfo.username,profile:userinfo.profile})
         }
       }
-    
   }
 }
