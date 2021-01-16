@@ -459,5 +459,74 @@ module.exports = {
           res.status(200).send({message:"userinfo updated",username:userinfo.username,profile:userinfo.profile})
         }
       }
+  },
+  
+  checkPassWord : async (req, res) => {
+    console.log("sss")
+    let authorization = req.headers["authorization"];
+    const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+    let userInfo;
+
+    //1. 엑세스토큰이 유효한지 확인
+    const actokenverify = () => {
+    try{
+      return jwt.verify(accessToken, process.env.ACCESS_SECRET);
+    }catch(err){
+      console.log(err);
+      return null
+    }
+  }
+
+  userInfo=actokenverify();
+  console.log("aaaa")
+    // 1-1. 엑세스 토큰이 만료되었을 때
+    if(!userInfo){
+      const cookieToken=req.cookies.refreshToken;
+      // console.log('cookietoken:'+cookieToken)
+      if(!cookieToken){
+        return res.json({data: null, message: 'refresh token not provided'})
+      }
+      //2. refresh token이 유효한지, 서버가 가지고 있는 비밀 키로 생성한 것이 맞는지 확인합니다.
+      let verifyToken = (token) => {
+        if(!token){
+          return null;
+        }
+        try{
+          return jwt.verify(token, process.env.REFRESH_SECRET);
+        }catch(err){
+          return null;
+        }
+      }
+      userInfo=verifyToken(cookieToken);
+      userInfo.refreshToken = true
+      if(!userInfo){
+        return res.json({message:"refresh token invaild"})
+      }
+    }
+    const body = req.body
+      const check = await user.findOne({
+        where : {
+          username : userInfo.username
+        }
+      }).catch(err=>{console.log(err)})
+      if(userInfo.refreshToken){
+        const accesstoken=jwt.sign({
+          email:check.email,
+          profile:check.profile,
+          username:check.username,
+          createdAt:check.createdAt,
+          updatedAt:check.updatedAt,
+          iat:Math.floor(Date.now() / 1000),
+          exp:Math.floor(Date.now() / 1000) + (60 * 60*24)
+        },process.env.ACCESS_SECRET);
+        check.accessToken = accesstoken
+      } else {
+        console.log()
+        if(body.password===check.password){
+          res.status(200).json({accessToken:check.accesstoken,message:"valid"})
+        } else {
+          res.status(422).send({message:"invalid"})
+        }
+    }
   }
 }
