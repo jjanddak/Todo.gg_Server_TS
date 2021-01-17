@@ -371,7 +371,7 @@ module.exports = {
     if(!UserInfo){
       res.status(404).send({message:"user doesn't exists"})
     } else {
-      res.status(200).json({userinfo:{email:UserInfo.email, username:UserInfo.username, profile:UserInfo.profile}})
+      res.status(200).json({userinfo:{id:UserInfo.id, email:UserInfo.email, username:UserInfo.username, profile:UserInfo.profile}})
     }
   },
 
