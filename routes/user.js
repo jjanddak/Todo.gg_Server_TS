@@ -32,7 +32,7 @@ router.post("/getOne", userController.GetUserInfo);
 //POST user/checkPassword
 router.post("/checkPassword", userController.checkPassWord);
 
-//GET user/LogOut
-router.get("/logout", userController.logout)
+//POST user/LogOut
+router.post("/logout", userController.logout)
 
 module.exports = router;
