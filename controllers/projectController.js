@@ -74,15 +74,32 @@ module.exports = {
       where:{
         id:req.params.id
       },
+      attributes:["id","title","description","start_date","end_date"],
       include:[
         {
-          model:contributer
+          model:contributer,
+          attributes:["id","project_id","taskCard_id","user_id"],
+          include:[
+            {
+              model:user,
+              attributes:["id","profile","username"]
+            }
+          ]
         },
         {
           model:taskCard,
+          attributes:["id","project_id","content","state"],
           include:[{
-            model:contributer
-          }]
+            model:contributer,
+            attributes:["id","project_id","taskCard_id","user_id"],
+            include:[
+              {
+                model:user,
+                attributes:["id","profile","username"]
+              }
+            ]
+          },
+        ]
         }
       ]
     })
