@@ -101,6 +101,7 @@ module.exports = {
       }
       userInfo=verifyToken(cookieToken);
       const newAccessToken=jwt.sign({
+        id:userInfo.id,
         username:userInfo.username,
         profile:userInfo.profile,
         email:userInfo.email,
@@ -269,6 +270,7 @@ module.exports = {
     }).catch(err => {console.log(err)})
 
     const accesstoken=jwt.sign({
+      id:userInfo.id,
       email:userinfo.email,
       profile:userinfo.profile,
       username:userinfo.username,
@@ -279,6 +281,7 @@ module.exports = {
     },process.env.ACCESS_SECRET);
 
     const refreshtoken=jwt.sign({
+      id:userInfo.id,
       email:userinfo.email,
       profile:userinfo.profile,
       username:userinfo.username,
@@ -440,6 +443,7 @@ module.exports = {
       }).catch(err=>{console.log(err)})
       if(userInfo.refreshToken){
         const accesstoken=jwt.sign({
+          id:userInfo.id,
           email:userinfo.email,
           profile:userinfo.profile,
           username:userinfo.username,
@@ -513,6 +517,7 @@ module.exports = {
       }).catch(err=>{console.log(err)})
       if(userInfo.refreshToken){
         const accesstoken=jwt.sign({
+          id:userInfo.id,
           email:check.email,
           profile:check.profile,
           username:check.username,
