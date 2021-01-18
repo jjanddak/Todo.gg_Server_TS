@@ -26,6 +26,7 @@ module.exports = {
     }else{
       //JWT(access, refresh)토큰 생성후 응답
       const accesstoken=jwt.sign({
+        id:userInfo.id,
         email:userInfo.email,
         profile:userInfo.profile,
         username:userInfo.username,
@@ -36,6 +37,7 @@ module.exports = {
       },process.env.ACCESS_SECRET);
   
       const refreshtoken=jwt.sign({
+        id:userInfo.id,
         email:userInfo.email,
         profile:userInfo.profile,
         username:userInfo.username,
