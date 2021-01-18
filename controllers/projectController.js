@@ -199,36 +199,101 @@ module.exports = {
     }
 
     const {id} = userInfo;
-
     const projectInfo = await project.create({
-      title:body.title,
-      description:body.description,
-      manager_id:id,
-      start_date:body.start_date,
-      end_date:body.end_date
-    }).catch(err=>{console.log(err); res.status(400).send({message:"failed"})});
-    
-    //매니저(작성자)를 contributer에 등록
-    await contributer.create({
-      project_id:projectInfo.dataValues.id,
-      user_id:id
-    }).catch(err=>{console.log(err); res.status(400).send({message:"failed"})});
-    
-    //프로젝트 참여 인원(들) contributer에 모두 등록
-    const addContributers = async (member) => {
+        title:body.title,
+        description:body.description,
+        manager_id:id,
+        start_date:body.start_date,
+        end_date:body.end_date
+      }).catch(err=>{console.log(err); res.status(400).send({message:"failed"})});
+
+      //매니저(작성자)를 contributer에 등록
       await contributer.create({
         project_id:projectInfo.dataValues.id,
-        user_id:member.id
-      })
-    }
-    body.member.map(ele=>{
-      addContributers(ele);
-    })
+        user_id:id
+      }).catch(err=>{console.log(err); res.status(400).send({message:"failed"})});
 
-    if(userInfo.newAccessToken){
-      return res.status(200).send({ message:"project added", accessToken:newAccessToken })
+      //프로젝트 참여 인원(들) contributer에 모두 등록
+      const addContributers = async (member) => {
+        await contributer.create({
+          project_id:projectInfo.dataValues.id,
+          user_id:member.id
+        })
+      }
+      body.member.map(ele=>{
+        addContributers(ele);
+      })
+
+      if(userInfo.newAccessToken){
+        return res.status(200).send({ message:"project added", accessToken:newAccessToken })
+      }else{
+        return res.status(200).send({ message:"project added" })
+      }
+    },
+
+  updateProject: async (req,res) => {
+    let authorization = req.headers["authorization"];
+    const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+    const body=req.body;
+
+    //수정하려는 유저가 매니저가 맞는지 확인
+    const projectInfo = await project.findOne({
+      where:{
+        id:req.params.id
+      }
+    }).catch(err=>res.status(400).send({message:err}))
+    if(projectInfo.dataValues.manager_id != id){
+      return res.status(400).send({message:"invalid user tried to update"});
+    }
+
+    //start_date, end_date 변경 분기 (둘다, 하나만)
+    if(body.start_date && body.end_date){
+      await project.update(
+        {
+          title:body.title,
+          description:body.description,
+          start_date:body.start_date,
+          end_date:body.end_date
+        },
+        {
+          where:{
+            id:req.params.id
+          }
+        }
+      ).catch(err=>res.status(400).send({message:err}));
+    } else if(body.start_date && !body.end_date){ //start_date 만 변경
+      await project.update(
+        {
+          title:body.title,
+          description:body.description,
+          start_date:body.start_date,
+        },
+        {
+          where:{
+            id:req.params.id
+          }
+        }
+      ).catch(err=>res.status(400).send({message:err}));
+    }else if(!body.start_date && body.end_date){ //end_date만 변경
+      await project.update(
+        {
+          title:body.title,
+          description:body.description,
+          end_date:body.end_date
+        },
+        {
+          where:{
+            id:req.params.id
+          }
+        }
+      ).catch(err=>res.status(400).send({message:err}));
+    }
+
+    //응답 (accessToken 분기)
+    if(newAccessToken){
+      return res.status(200).send({message:"project update success", accessToken:newAccessToken })
     }else{
-      return res.status(200).send({ message:"project added" })
+      return res.status(200).send({message:"project update success"})
     }
   },
 
