@@ -203,8 +203,8 @@ module.exports = {
         title:body.title,
         description:body.description,
         manager_id:id,
-        start_date:body.start_date,
-        end_date:body.end_date
+        start_date:body.startDate,
+        end_date:body.endDate
       }).catch(err=>{console.log(err); res.status(400).send({message:"failed"})});
 
       //매니저(작성자)를 contributer에 등록
@@ -225,9 +225,9 @@ module.exports = {
       })
 
       if(userInfo.newAccessToken){
-        return res.status(200).send({ message:"project added", accessToken:newAccessToken })
+        return res.status(200).send({ project_id: projectInfo.dataValues.id, message:"project added", accessToken:newAccessToken })
       }else{
-        return res.status(200).send({ message:"project added" })
+        return res.status(200).send({ project_id: projectInfo.dataValues.id, message:"project added" })
       }
     },
 

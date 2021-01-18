@@ -194,22 +194,14 @@ module.exports = {
   },
   
   SignUp : async (req, res) => {
-		const body = req.body;
-		if (!body.email || !body.password || !body.username) {
-			res.status(422).send("insufficient parameters supplied");
-		} else if (body.password.length < 6 || body.password.length > 12) {
-			res.status(400).send("resize password length");
-		} else {
-			const createuserinfo = await user.create({
-        profile:body.profile,
-				email: body.email,
-				password: body.password,
-				username: body.username,
-			}).catch(err=>console.log(err));
-			if (createuserinfo) {
-				res.status(200).json(createuserinfo);
-			}
-		}
+    const body = req.body;
+    await user.create({
+      profile:body.profile,
+      email: body.email,
+      password: body.password,
+      username: body.username,
+    }).catch(err=>res.status(400).send(err));
+    res.status(200).json({message:"signup success"});
 	},
 	CheckEmail: async (req, res) => {
 		const body = req.body;
