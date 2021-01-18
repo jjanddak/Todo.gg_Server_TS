@@ -11,6 +11,7 @@ module.exports = {
     
     //1. 엑세스토큰이 유효한지 확인
     let userInfo;
+    let newAccessToken;
     let verifyAccessToken = () => {
       if(!accessToken){
         return null;
@@ -42,7 +43,8 @@ module.exports = {
         }
       }
       userInfo=verifyToken(cookieToken);
-      const newAccessToken=jwt.sign({
+      newAccessToken=jwt.sign({
+        id:userInfo.id,
         username:userInfo.username,
         profile:userInfo.profile,
         email:userInfo.email,
@@ -74,15 +76,32 @@ module.exports = {
       where:{
         id:req.params.id
       },
+      attributes:["id","title","description","start_date","end_date"],
       include:[
         {
-          model:contributer
+          model:contributer,
+          attributes:["id","project_id","taskCard_id","user_id"],
+          include:[
+            {
+              model:user,
+              attributes:["id","profile","username"]
+            }
+          ]
         },
         {
           model:taskCard,
+          attributes:["id","project_id","content","state"],
           include:[{
-            model:contributer
-          }]
+            model:contributer,
+            attributes:["id","project_id","taskCard_id","user_id"],
+            include:[
+              {
+                model:user,
+                attributes:["id","profile","username"]
+              }
+            ]
+          },
+        ]
         }
       ]
     })
@@ -113,17 +132,22 @@ module.exports = {
         }
       });
       // result.taskCardCount=countObj;
-      return res.status(200).send({projectInfo:result, taskCardCount:countObj});
+      if(userInfo.newAccessToken){
+        return res.status(200).send({projectInfo:result, taskCardCount:countObj, accessToken:newAccessToken});
+      }else{
+        return res.status(200).send({projectInfo:result, taskCardCount:countObj});
+      }
     }).catch(err=>{
       console.log(err);
     })
   },
 
-  updateProject: async (req,res) => {
-    let authorization = req.headers["authorization"];
-    const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+  newProject: async (req,res) => {
     const body=req.body;
 
+    let authorization = req.headers["authorization"];
+    const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+    
     //1. 엑세스토큰이 유효한지 확인
     let userInfo;
     let newAccessToken;
@@ -175,6 +199,42 @@ module.exports = {
     }
 
     const {id} = userInfo;
+    const projectInfo = await project.create({
+        title:body.title,
+        description:body.description,
+        manager_id:id,
+        start_date:body.start_date,
+        end_date:body.end_date
+      }).catch(err=>{console.log(err); res.status(400).send({message:"failed"})});
+
+      //매니저(작성자)를 contributer에 등록
+      await contributer.create({
+        project_id:projectInfo.dataValues.id,
+        user_id:id
+      }).catch(err=>{console.log(err); res.status(400).send({message:"failed"})});
+
+      //프로젝트 참여 인원(들) contributer에 모두 등록
+      const addContributers = async (member) => {
+        await contributer.create({
+          project_id:projectInfo.dataValues.id,
+          user_id:member.id
+        })
+      }
+      body.member.map(ele=>{
+        addContributers(ele);
+      })
+
+      if(userInfo.newAccessToken){
+        return res.status(200).send({ message:"project added", accessToken:newAccessToken })
+      }else{
+        return res.status(200).send({ message:"project added" })
+      }
+    },
+
+  updateProject: async (req,res) => {
+    let authorization = req.headers["authorization"];
+    const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+    const body=req.body;
 
     //수정하려는 유저가 매니저가 맞는지 확인
     const projectInfo = await project.findOne({
@@ -236,4 +296,96 @@ module.exports = {
       return res.status(200).send({message:"project update success"})
     }
   },
+
+    newTask : async (req, res) => {
+      let authorization = req.headers["authorization"];
+      const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+      let userInfo;
+  
+      
+      const actokenverify = () => {
+      try{
+        return jwt.verify(accessToken, process.env.ACCESS_SECRET);
+      }catch(err){
+        console.log(err);
+        return null
+      }
+    }
+  
+    userInfo=actokenverify();
+    
+    
+      if(!userInfo){
+        const cookieToken=req.cookies.refreshToken;
+    
+        if(!cookieToken){
+          return res.json({data: null, message: 'refresh token not provided'})
+        }
+    
+        let verifyToken = (token) => {
+          if(!token){
+            return null;
+          }
+          try{
+            return jwt.verify(token, process.env.REFRESH_SECRET);
+          }catch(err){
+            return null;
+          }
+        }
+        userInfo=verifyToken(cookieToken);
+        userInfo.refreshToken = true
+        if(!userInfo){
+          return res.json({message:"refresh token invaild"})
+        }
+      }
+    
+      const userdata = await user.findOne({
+        where : {
+          email : userInfo.email
+        } 
+      }).catch(err => {console.log(err)})
+      console.log(userdata.email)
+        if(userInfo.refreshToken){
+          const accesstoken=jwt.sign({
+            id:userdata.id,
+            email:userdata.email,
+            profile:userdata.profile,
+            username:userdata.username,
+            createdAt:userdata.createdAt,
+            updatedAt:userdata.updatedAt,
+            iat:Math.floor(Date.now() / 1000),
+            exp:Math.floor(Date.now() / 1000) + (60 * 60*24)
+          },process.env.ACCESS_SECRET);
+          userdata.accessToken = accesstoken
+        }
+        
+        const newtaskcard = await taskCard.create({
+          content : req.body.content,
+          project_id : req.params.id
+        })
+        await contributer.create({
+          taskCard_id : newtaskcard.dataValues.id,
+          user_id : userInfo.id
+        }).catch(err => {console.log(err)})
+
+        const addContributers = async (member) => {
+          await contributer.create({
+            taskCard_id:newtaskcard.dataValues.id,
+            user_id:member.id
+          })
+        }
+        req.body.member.map(ele=>{
+          addContributers(ele);
+        })
+
+      
+     if(!newtaskcard){
+     res.status(400).send({message:"taskCard add failed"})
+    } else {
+     res.status(200).send({createTaskCard : newtaskcard})
+     if(userdata.accessToken){
+       res.status(200).send({accessToken:userdata.accessToken})
+     }
+    }
+  }
 }
