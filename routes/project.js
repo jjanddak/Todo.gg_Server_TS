@@ -11,10 +11,13 @@ router.post("/:id/update", projectController.updateProject);
 //POST /project/newProject
 router.post("/new", projectController.newProject);
 
-//POST/project/id/newTask
+//POST /project/id/newTask
 router.post("/:id/newTask", projectController.newTask);
 
-//POST/project/:id/updateTask
+//POST /project/:id/updateTask
 router.post("/:id/updateTask", projectController.updateTask) 
+
+//POST /project/:id/addContributer
+router.post("/:id/addContributer", projectController.taskCardAddUser)
 
 module.exports = router;
