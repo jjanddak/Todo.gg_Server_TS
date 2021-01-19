@@ -368,21 +368,12 @@ module.exports = {
           user_id : userInfo.id
         }).catch(err => {console.log(err)})
 
-        const addContributers = async (member) => {
-          await contributer.create({
-            taskCard_id:newtaskcard.dataValues.id,
-            user_id:member.id
-          })
-        }
-        req.body.member.map(ele=>{
-          addContributers(ele);
-        })
       
       
      if(!newtaskcard){
      res.status(400).send({message:"taskCard add failed"})
     } else {
-     res.status(200).send({createTaskCard : newtaskcard})
+     res.status(200).send({message:"taskCard added"})
      if(userdata.accessToken){
        res.status(200).send({accessToken:userdata.accessToken})
      }
