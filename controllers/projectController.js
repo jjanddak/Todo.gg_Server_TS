@@ -213,16 +213,19 @@ module.exports = {
         user_id:id
       }).catch(err=>{console.log(err); res.status(400).send({message:"failed"})});
 
-      //프로젝트 참여 인원(들) contributer에 모두 등록
+      //프로젝트 참여 인원(들) contributer에 모두 등록(멤버 있을 때만)
       const addContributers = async (member) => {
         await contributer.create({
           project_id:projectInfo.dataValues.id,
           user_id:member.id
+        }).catch(err=>res.status(400).send({message : "add member failed"}));
+      }
+      //req.body에 member가 있을 때만 추가
+      if(body.member){
+        body.member.map(ele=>{
+          addContributers(ele);
         })
       }
-      body.member.map(ele=>{
-        addContributers(ele);
-      })
 
       if(userInfo.newAccessToken){
         return res.status(200).send({ project_id: projectInfo.dataValues.id, message:"project added", accessToken:newAccessToken })
