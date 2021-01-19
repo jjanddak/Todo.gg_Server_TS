@@ -364,7 +364,8 @@ module.exports = {
         
         const newtaskcard = await taskCard.create({
           content : req.body.content,
-          project_id : req.params.id
+          project_id : req.params.id,
+          state:"todo"
         })
         await contributer.create({
           taskCard_id : newtaskcard.dataValues.id,
