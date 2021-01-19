@@ -19,5 +19,10 @@ router.post("/:id/updateTask", projectController.updateTask)
 
 //POST /project/:id/addContributer
 router.post("/:id/addContributer", projectController.taskCardAddUser)
+//POST /project/:id/updateTask
+router.post("/:id/updateTask", projectController.updateTask);
+
+//POST /project/:id/updateState
+router.post("/:id/updateState", projectController.taskCardUpdateState);
 
 module.exports = router;

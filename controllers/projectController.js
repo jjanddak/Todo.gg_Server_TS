@@ -213,16 +213,19 @@ module.exports = {
         user_id:id
       }).catch(err=>{console.log(err); res.status(400).send({message:"failed"})});
 
-      //프로젝트 참여 인원(들) contributer에 모두 등록
+      //프로젝트 참여 인원(들) contributer에 모두 등록(멤버 있을 때만)
       const addContributers = async (member) => {
         await contributer.create({
           project_id:projectInfo.dataValues.id,
           user_id:member.id
+        }).catch(err=>res.status(400).send({message : "add member failed"}));
+      }
+      //req.body에 member가 있을 때만 추가
+      if(body.member){
+        body.member.map(ele=>{
+          addContributers(ele);
         })
       }
-      body.member.map(ele=>{
-        addContributers(ele);
-      })
 
       if(userInfo.newAccessToken){
         return res.status(200).send({ project_id: projectInfo.dataValues.id, message:"project added", accessToken:newAccessToken })
@@ -361,28 +364,20 @@ module.exports = {
         
         const newtaskcard = await taskCard.create({
           content : req.body.content,
-          project_id : req.params.id
+          project_id : req.params.id,
+          state:"todo"
         })
         await contributer.create({
           taskCard_id : newtaskcard.dataValues.id,
           user_id : userInfo.id
         }).catch(err => {console.log(err)})
 
-        const addContributers = async (member) => {
-          await contributer.create({
-            taskCard_id:newtaskcard.dataValues.id,
-            user_id:member.id
-          })
-        }
-        req.body.member.map(ele=>{
-          addContributers(ele);
-        })
       
       
      if(!newtaskcard){
      res.status(400).send({message:"taskCard add failed"})
     } else {
-     res.status(200).send({createTaskCard : newtaskcard})
+     res.status(200).send({message:"taskCard added"})
      if(userdata.accessToken){
        res.status(200).send({accessToken:userdata.accessToken})
      }
@@ -461,6 +456,15 @@ module.exports = {
   },
 
   taskCardAddUser : async (req, res) => {
+      const body = req.body
+    const addUser = await contributer.create({
+      user_id : body.user_id,
+      taskCard_id : body.taskCard_id
+    }).catch(err => {console.log(err)})
+    
+    if(addUser){
+      res.status(200).send({message:"contributer added"})
+  taskCardUpdateState : async (req, res) => {
     let authorization = req.headers["authorization"];
     const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
     
@@ -513,13 +517,21 @@ module.exports = {
       }
     }
     const body = req.body
-    const addUser = await contributer.create({
-      user_id : body.user_id,
-      taskCard_id : body.taskCard_id
+    const updateState = await taskCard.update({
+      state : body.state
+    },{
+      where : {
+        id : req.params.id
+      }
     }).catch(err => {console.log(err)})
     
-    if(addUser){
-      res.status(200).send({message:"contributer added"})
+    if(!updateState){
+      res.status(400).send({message:"taskCard update failed"})
+    } else {
+      res.status(200).send({message:"taskCard state updated"})
+      if(userInfo){
+        res.status(200).send({accessToken:userInfo.newAccessToken})
+      }
     }
   }
 }
