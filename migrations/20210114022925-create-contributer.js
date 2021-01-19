@@ -9,10 +9,20 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       project_id: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        onDelete: 'CASCADE',
+        references: {
+          model: 'projects',
+          key: 'id',
+        },
       },
       taskCard_id: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        onDelete: 'CASCADE',
+        references: {
+          model: 'projects',
+          key: 'id',
+        },
       },
       user_id: {
         type: Sequelize.INTEGER

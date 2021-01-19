@@ -11,8 +11,8 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      contributer.belongsTo(models.project, {foreignKey: "project_id", targetKey:"id"});
-      contributer.belongsTo(models.taskCard, {foreignKey:"taskCard_id", targetKey:"id"});
+      contributer.belongsTo(models.project, {foreignKey: "project_id", targetKey:"id", onDelete:"cascade"});
+      contributer.belongsTo(models.taskCard, {foreignKey:"taskCard_id", targetKey:"id", onDelete:"cascade"});
       contributer.belongsTo(models.user, {foreignKey:"user_id", targetKey:"id"});
     }
   };
