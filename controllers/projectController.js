@@ -455,6 +455,15 @@ module.exports = {
     }
   },
 
+  taskCardAddUser : async (req, res) => {
+      const body = req.body
+    const addUser = await contributer.create({
+      user_id : body.user_id,
+      taskCard_id : body.taskCard_id
+    }).catch(err => {console.log(err)})
+    
+    if(addUser){
+      res.status(200).send({message:"contributer added"})
   taskCardUpdateState : async (req, res) => {
     let authorization = req.headers["authorization"];
     const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
@@ -507,7 +516,6 @@ module.exports = {
         return res.status(400).send({message:"invalid refreshToken"});
       }
     }
-
     const body = req.body
     const updateState = await taskCard.update({
       state : body.state
