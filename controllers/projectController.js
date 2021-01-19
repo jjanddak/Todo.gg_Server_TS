@@ -449,11 +449,14 @@ module.exports = {
         id : req.params.id
       }
     }).catch(err => {console.log(err)})
-   
+
     if(!taskcardupdate){
       res.status(400).send({message:"taskCard update failed"})
     } else {
       res.status(200).send({message:"taskCard updated"})
+      if(userInfo){
+        res.status(200).send({accessToken:userInfo.newAccessToken})
+      }
     }
   }
 }

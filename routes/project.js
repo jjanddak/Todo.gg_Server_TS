@@ -15,6 +15,6 @@ router.post("/new", projectController.newProject);
 router.post("/:id/newTask", projectController.newTask);
 
 //POST/project/:id/updateTask
-router.post("/:id/updateTask", projectController.updateTask)
+router.post("/:id/updateTask", projectController.updateTask) 
 
 module.exports = router;
