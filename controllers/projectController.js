@@ -213,16 +213,19 @@ module.exports = {
         user_id:id
       }).catch(err=>{console.log(err); res.status(400).send({message:"failed"})});
 
-      //프로젝트 참여 인원(들) contributer에 모두 등록
+      //프로젝트 참여 인원(들) contributer에 모두 등록(멤버 있을 때만)
       const addContributers = async (member) => {
         await contributer.create({
           project_id:projectInfo.dataValues.id,
           user_id:member.id
+        }).catch(err=>res.status(400).send({message : "add member failed"}));
+      }
+      //req.body에 member가 있을 때만 추가
+      if(body.member){
+        body.member.map(ele=>{
+          addContributers(ele);
         })
       }
-      body.member.map(ele=>{
-        addContributers(ele);
-      })
 
       if(userInfo.newAccessToken){
         return res.status(200).send({ project_id: projectInfo.dataValues.id, message:"project added", accessToken:newAccessToken })
@@ -361,28 +364,20 @@ module.exports = {
         
         const newtaskcard = await taskCard.create({
           content : req.body.content,
-          project_id : req.params.id
+          project_id : req.params.id,
+          state:"todo"
         })
         await contributer.create({
           taskCard_id : newtaskcard.dataValues.id,
           user_id : userInfo.id
         }).catch(err => {console.log(err)})
 
-        const addContributers = async (member) => {
-          await contributer.create({
-            taskCard_id:newtaskcard.dataValues.id,
-            user_id:member.id
-          })
-        }
-        req.body.member.map(ele=>{
-          addContributers(ele);
-        })
       
       
      if(!newtaskcard){
      res.status(400).send({message:"taskCard add failed"})
     } else {
-     res.status(200).send({createTaskCard : newtaskcard})
+     res.status(200).send({message:"taskCard added"})
      if(userdata.accessToken){
        res.status(200).send({accessToken:userdata.accessToken})
      }
@@ -454,6 +449,78 @@ module.exports = {
       res.status(400).send({message:"taskCard update failed"})
     } else {
       res.status(200).send({message:"taskCard updated"})
+      if(userInfo){
+        res.status(200).send({accessToken:userInfo.newAccessToken})
+      }
+    }
+  },
+
+  taskCardUpdateState : async (req, res) => {
+    let authorization = req.headers["authorization"];
+    const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+    
+    //1. 엑세스토큰이 유효한지 확인
+    let userInfo;
+    let verifyAccessToken = () => {
+      if(!accessToken){
+        return null;
+      }
+      try{
+        return jwt.verify(accessToken, process.env.ACCESS_SECRET);
+      }catch(err){
+        return null;
+      }
+    }
+    
+    userInfo=verifyAccessToken();
+
+    //1-1. 엑세스 토큰이 만료되었을 때
+    if(!userInfo){
+      const cookieToken=req.cookies.refreshToken;
+      if(!cookieToken){
+        return res.status(400).json({data: null, message: 'refresh token not provided'})
+      }
+      //2. refresh token이 유효한지, 서버가 가지고 있는 비밀 키로 생성한 것이 맞는지 확인합니다.
+      let verifyToken = (token) => {
+        if(!token){
+          return null;
+        }
+        try{
+          return jwt.verify(token, process.env.REFRESH_SECRET);
+        }catch(err){
+          return null;
+        }
+      }
+      userInfo=verifyToken(cookieToken);
+      const newAccessToken=jwt.sign({
+        id:userInfo.id,
+        username:userInfo.username,
+        profile:userInfo.profile,
+        email:userInfo.email,
+        createdAt:userInfo.createdAt,
+        updatedAt:userInfo.updatedAt,
+        iat:Math.floor(Date.now() / 1000),
+        exp:Math.floor(Date.now() / 1000) + (60 * 60 * 24)
+      },process.env.ACCESS_SECRET);
+      userInfo.newAccessToken=newAccessToken;
+      if(!userInfo){
+        return res.status(400).send({message:"invalid refreshToken"});
+      }
+    }
+
+    const body = req.body
+    const updateState = await taskCard.update({
+      state : body.state
+    },{
+      where : {
+        id : req.params.id
+      }
+    }).catch(err => {console.log(err)})
+    
+    if(!updateState){
+      res.status(400).send({message:"taskCard update failed"})
+    } else {
+      res.status(200).send({message:"taskCard state updated"})
       if(userInfo){
         res.status(200).send({accessToken:userInfo.newAccessToken})
       }
