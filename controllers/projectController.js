@@ -458,5 +458,19 @@ module.exports = {
         res.status(200).send({accessToken:userInfo.newAccessToken})
       }
     }
+  },
+  
+  deleteContributer : async (req, res) => {
+    const body = req.body
+    const deleteUser = await contributer.destroy({
+      where : {
+        user_id : body.user_id,
+        taskCard_id : body.taskCard_id
+      }
+    }).catch(err => {console.log(err)})
+    
+    if(deleteUser){
+      res.status(200).send({message:"contributer deleted"})
+    }
   }
 }
