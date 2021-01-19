@@ -371,24 +371,155 @@ module.exports = {
           user_id : userInfo.id
         }).catch(err => {console.log(err)})
 
-        const addContributers = async (member) => {
-          await contributer.create({
-            taskCard_id:newtaskcard.dataValues.id,
-            user_id:member.id
-          })
-        }
-        req.body.member.map(ele=>{
-          addContributers(ele);
-        })
-
+      
       
      if(!newtaskcard){
      res.status(400).send({message:"taskCard add failed"})
     } else {
-     res.status(200).send({createTaskCard : newtaskcard})
+     res.status(200).send({message:"taskCard added"})
      if(userdata.accessToken){
        res.status(200).send({accessToken:userdata.accessToken})
      }
+    }
+  },
+
+  updateTask : async (req,res) => {
+    let authorization = req.headers["authorization"];
+    const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+    
+    //1. 엑세스토큰이 유효한지 확인
+    let userInfo;
+    let verifyAccessToken = () => {
+      if(!accessToken){
+        return null;
+      }
+      try{
+        return jwt.verify(accessToken, process.env.ACCESS_SECRET);
+      }catch(err){
+        return null;
+      }
+    }
+    
+    userInfo=verifyAccessToken();
+
+    //1-1. 엑세스 토큰이 만료되었을 때
+    if(!userInfo){
+      const cookieToken=req.cookies.refreshToken;
+      if(!cookieToken){
+        return res.status(400).json({data: null, message: 'refresh token not provided'})
+      }
+      //2. refresh token이 유효한지, 서버가 가지고 있는 비밀 키로 생성한 것이 맞는지 확인합니다.
+      let verifyToken = (token) => {
+        if(!token){
+          return null;
+        }
+        try{
+          return jwt.verify(token, process.env.REFRESH_SECRET);
+        }catch(err){
+          return null;
+        }
+      }
+      userInfo=verifyToken(cookieToken);
+      const newAccessToken=jwt.sign({
+        id:userInfo.id,
+        username:userInfo.username,
+        profile:userInfo.profile,
+        email:userInfo.email,
+        createdAt:userInfo.createdAt,
+        updatedAt:userInfo.updatedAt,
+        iat:Math.floor(Date.now() / 1000),
+        exp:Math.floor(Date.now() / 1000) + (60 * 60 * 24)
+      },process.env.ACCESS_SECRET);
+      userInfo.newAccessToken=newAccessToken;
+      if(!userInfo){
+        return res.status(400).send({message:"invalid refreshToken"});
+      }
+    }
+    const body = req.body
+    const taskcardupdate = await taskCard.update({
+      content : body.content
+    },{
+      where : {
+        id : req.params.id
+      }
+    }).catch(err => {console.log(err)})
+   
+    if(!taskcardupdate){
+      res.status(400).send({message:"taskCard update failed"})
+    } else {
+      res.status(200).send({message:"taskCard updated"})
+    }
+  },
+
+  taskCardUpdateState : async (req, res) => {
+    let authorization = req.headers["authorization"];
+    const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+    
+    //1. 엑세스토큰이 유효한지 확인
+    let userInfo;
+    let verifyAccessToken = () => {
+      if(!accessToken){
+        return null;
+      }
+      try{
+        return jwt.verify(accessToken, process.env.ACCESS_SECRET);
+      }catch(err){
+        return null;
+      }
+    }
+    
+    userInfo=verifyAccessToken();
+
+    //1-1. 엑세스 토큰이 만료되었을 때
+    if(!userInfo){
+      const cookieToken=req.cookies.refreshToken;
+      if(!cookieToken){
+        return res.status(400).json({data: null, message: 'refresh token not provided'})
+      }
+      //2. refresh token이 유효한지, 서버가 가지고 있는 비밀 키로 생성한 것이 맞는지 확인합니다.
+      let verifyToken = (token) => {
+        if(!token){
+          return null;
+        }
+        try{
+          return jwt.verify(token, process.env.REFRESH_SECRET);
+        }catch(err){
+          return null;
+        }
+      }
+      userInfo=verifyToken(cookieToken);
+      const newAccessToken=jwt.sign({
+        id:userInfo.id,
+        username:userInfo.username,
+        profile:userInfo.profile,
+        email:userInfo.email,
+        createdAt:userInfo.createdAt,
+        updatedAt:userInfo.updatedAt,
+        iat:Math.floor(Date.now() / 1000),
+        exp:Math.floor(Date.now() / 1000) + (60 * 60 * 24)
+      },process.env.ACCESS_SECRET);
+      userInfo.newAccessToken=newAccessToken;
+      if(!userInfo){
+        return res.status(400).send({message:"invalid refreshToken"});
+      }
+    }
+
+    const body = req.body
+    const updateState = await taskCard.update({
+      state : body.state
+    },{
+      where : {
+        id : req.params.id
+      }
+    }).catch(err => {console.log(err)})
+    
+    if(!updateState){
+      res.status(400).send({message:"taskCard update failed"})
+    } else {
+      res.status(200).send({message:"taskCard state updated"})
+      if(userInfo){
+        res.status(200).send({accessToken:userInfo.newAccessToken})
+      }
     }
   }
 }
