@@ -275,18 +275,39 @@ module.exports = {
   },
 
   GitHub_SignUpNLogin : async (req,res) => {
-    const userinfo = await user.findOrCreate({
-      where : {
-        email : req.body.id,
-      },
-      default : {
-        email : req.body.id,
-        username : req.body.name
+    const body = req.body.data;
+    let userinfo;
+    const gitName = body.name!=="" ? body.name : "GithubName"+body.id;
+    // const userinfo = await user.findOrCreate({
+    //   where : {
+    //     email : body.id,
+    //   },
+    //   default : {
+    //     email : body.id,
+    //     username : gitName,
+    //     password : body.login,
+    //     profile : body.avatar_url
+    //   }
+    // })
+    let findUser = await user.findOne({
+      where:{
+        email:body.id
       }
-    }).catch(err => {console.log(err)})
+    })
 
+    if(findUser){
+      userinfo=findUser;
+    }else{ //새로가입해야함
+      userinfo=await user.create({
+        email : body.id,
+        username : gitName,
+        password : body.login,
+        profile : body.avatar_url        
+      })
+    }
+    
     const accesstoken=jwt.sign({
-      id:userInfo.id,
+      id:userinfo.id,
       email:userinfo.email,
       profile:userinfo.profile,
       username:userinfo.username,
@@ -297,7 +318,7 @@ module.exports = {
     },process.env.ACCESS_SECRET);
 
     const refreshtoken=jwt.sign({
-      id:userInfo.id,
+      id:userinfo.id,
       email:userinfo.email,
       profile:userinfo.profile,
       username:userinfo.username,
@@ -313,12 +334,11 @@ module.exports = {
       sameSite:'none',
     });
 
-    // if(!userinfo){
-    //   res.status(400).send({message:"no"})
-    // } else {
-    //   res.status(200).send({accessToken:accesstoken , message:"good!"})
-    // }
-
+    if(!userinfo){
+      res.status(400).send({message:"signUp or login failed"})
+    } else {
+      res.status(200).send({accessToken:accesstoken , message:"github login success"})
+    }
   },
 
   Google_SocialLogin : (req, res) => {
