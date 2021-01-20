@@ -506,6 +506,22 @@ module.exports = {
       }
     }
   },
+  
+  deleteContributer : async (req, res) => {
+    const body = req.body
+    const deleteUser = await contributer.destroy({
+      where : {
+        user_id : body.user_id,
+        taskCard_id : body.taskCard_id
+      }
+    }).catch(err => {console.log(err)})
+    
+    if(deleteUser){
+      res.status(200).send({message:"contributer deleted"})
+    }else{
+      res.status(400).send({message: "contributer delete failed"});  
+    }
+  },
 
   taskCardAddUser : async (req, res) => {
     let authorization = req.headers["authorization"];
