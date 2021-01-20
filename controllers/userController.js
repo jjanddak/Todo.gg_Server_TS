@@ -1,7 +1,8 @@
 require('dotenv').config();
 const { user, project, contributer, taskCard } = require("../models");
-// const sequelize = require("sequelize");
+const Sequelize = require("sequelize");
 const jwt = require('jsonwebtoken');
+const Op = Sequelize.Op;
 
 // const GithubStrategy = require("passport-github");
 // const GoogleStrategy = require("passport-google");
@@ -101,6 +102,7 @@ module.exports = {
       }
       userInfo=verifyToken(cookieToken);
       const newAccessToken=jwt.sign({
+        id:userInfo.id,
         username:userInfo.username,
         profile:userInfo.profile,
         email:userInfo.email,
@@ -111,7 +113,7 @@ module.exports = {
       },process.env.ACCESS_SECRET);
       userInfo.newAccessToken=newAccessToken;
       if(!userInfo){
-        res.status(400).send({message:"invalid refreshToken"});
+        return res.status(400).send({message:"invalid refreshToken"});
       }
     }
 
@@ -126,54 +128,73 @@ module.exports = {
         {
           model: contributer,
           attributes:["project_id","user_id"],
-          include : [
+          where: {
+            project_id: {
+              [Op.ne]: null
+            }
+          },
+          include:[
             {
-              model: project,
+              model:project,
               attributes:["id","title","description","manager_id","start_date","end_date"],
-              include: [
-              {
-                model: taskCard,
-                attributes:["project_id","content","state"],
-              },
-              {
-                model:contributer,
-                attributes:["project_id","user_id"],
-                include:[{
+              include:[
+                {
+                  model:taskCard,
+                  attributes:["id","project_id","content","state"],
+                  // include:[
+                  //   {
+                  //     model:contributer,
+                  //     attributes:["project_id","user_id"],
+                  //     include:[{
+                  //       model:user,
+                  //       attributes:["profile","username"],
+                  //     }]
+                  //   }
+                  // ]
+                },
+                {
+                  model:contributer,
+                  attributes:["project_id","user_id"],
+                  include:[{
+                    model:user,
+                    attributes:["id","profile","username"],
+                  }]
+                },
+                {
                   model:user,
-                  attributes:["profile","username"],
-                }]
-              },
-              {
-                model:user,
-                attributes:["profile"]
-              }
-            ]
+                  attributes:["profile"]
+                }
+              ]
             }
           ]
         },
       ]
-      }).then(data=>{
-        delete data.dataValues.password;
-        let taskCardsArr=[];
-        data.dataValues.contributers.map(ele=>{
+    })
+    .then((data)=>{
+      delete data.dataValues.password;
+      let taskCardsArr=[];
+
+      data.contributers.map(ele=>{
+        if(ele.project){          
           let countObj={todo:0,inprogress:0,done:0};
           countObj.project_id=ele.project_id;
+  
           for(let i=0;i<ele.project.taskCards.length;i++){
-            if(ele.project.taskCards[i].state=="todo"){
+            if(ele.project.taskCards[i].dataValues.state=="todo"){
               if(countObj.todo<1){
                 countObj.todo=1;
-              }else{
+              }else{ 
                 countObj.todo++;
               }
             }
-            if(ele.project.taskCards[i].state=="inprogress"){
+            if(ele.project.taskCards[i].dataValues.state=="inprogress"){
               if(countObj.inprogress<1){
                 countObj.inprogress=1;
               }else{
                 countObj.inprogress++;
               }
             }
-            if(ele.project.taskCards[i].state=="done"){
+            if(ele.project.taskCards[i].dataValues.state=="done"){
               if(countObj.done<1){
                 countObj.done=1;
               }else{
@@ -182,33 +203,28 @@ module.exports = {
             }
           }
           taskCardsArr.push(countObj);
-        })
-        data.dataValues.taskCardCount=taskCardsArr;
-        if(userInfo.newAccessToken){
-          res.status(200).send({projectList:data, accessToken: userInfo.newAccessToken});
-        }else{
-          res.status(200).send({projectList:data});
         }
-      }).catch((err)=>console.log(err));
+      })
+      data.dataValues.taskCardCount=taskCardsArr;
+      if(userInfo.newAccessToken){
+        res.status(200).send({projectList:data, accessToken: userInfo.newAccessToken});
+      }else{
+        res.status(200).send({projectList:data});
+      }
+
+    })
+    .catch((err)=>console.log(err));
   },
   
   SignUp : async (req, res) => {
-		const body = req.body;
-		if (!body.email || !body.password || !body.username) {
-			res.status(422).send("insufficient parameters supplied");
-		} else if (body.password.length < 6 || body.password.length > 12) {
-			res.status(400).send("resize password length");
-		} else {
-			const createuserinfo = await user.create({
-        profile:body.profile,
-				email: body.email,
-				password: body.password,
-				username: body.username,
-			}).catch(err=>console.log(err));
-			if (createuserinfo) {
-				res.status(200).json(createuserinfo);
-			}
-		}
+    const body = req.body;
+    await user.create({
+      profile:body.profile,
+      email: body.email,
+      password: body.password,
+      username: body.username,
+    }).catch(err=>res.status(400).send(err));
+    res.status(200).json({message:"signup success"});
 	},
 	CheckEmail: async (req, res) => {
 		const body = req.body;
@@ -269,6 +285,7 @@ module.exports = {
     }).catch(err => {console.log(err)})
 
     const accesstoken=jwt.sign({
+      id:userInfo.id,
       email:userinfo.email,
       profile:userinfo.profile,
       username:userinfo.username,
@@ -279,6 +296,7 @@ module.exports = {
     },process.env.ACCESS_SECRET);
 
     const refreshtoken=jwt.sign({
+      id:userInfo.id,
       email:userinfo.email,
       profile:userinfo.profile,
       username:userinfo.username,
@@ -440,6 +458,7 @@ module.exports = {
       }).catch(err=>{console.log(err)})
       if(userInfo.refreshToken){
         const accesstoken=jwt.sign({
+          id:userInfo.id,
           email:userinfo.email,
           profile:userinfo.profile,
           username:userinfo.username,
@@ -513,6 +532,7 @@ module.exports = {
       }).catch(err=>{console.log(err)})
       if(userInfo.refreshToken){
         const accesstoken=jwt.sign({
+          id:userInfo.id,
           email:check.email,
           profile:check.profile,
           username:check.username,
