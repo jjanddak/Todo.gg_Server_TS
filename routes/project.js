@@ -17,6 +17,9 @@ router.post("/:id/newTask", projectController.newTask);
 //POST /project/:id/updateTask
 router.post("/:id/updateTask", projectController.updateTask) 
 
+//POST /project/:id/deleteContributer
+router.post("/:id/deleteContributer", projectController.deleteContributer)
+
 //POST /project/:id/addContributer
 router.post("/:id/addContributer", projectController.taskCardAddUser)
 
