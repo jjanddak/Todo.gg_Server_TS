@@ -55,6 +55,7 @@ module.exports = {
       });
       res.status(200).send({
         userinfo:{
+          profile:userInfo.profile,
           email:userInfo.email,
           username:userInfo.username
         },
