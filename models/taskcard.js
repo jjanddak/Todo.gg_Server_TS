@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      taskCard.belongsTo(models.project, {foreignKey:"project_id", targetKey:"id"});
+      taskCard.belongsTo(models.project, {foreignKey:"project_id", targetKey:"id", onDelete:"cascade"});
       taskCard.hasMany(models.contributer, {foreignKey:"taskCard_id", sourceKey:"id"});
     }
   };
