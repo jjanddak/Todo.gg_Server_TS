@@ -76,7 +76,7 @@ module.exports = {
       where:{
         id:req.params.id
       },
-      attributes:["id","title","description","start_date","end_date"],
+      attributes:["id","title","description","start_date","end_date","manager_id"],
       include:[
         {
           model:contributer,
