@@ -382,6 +382,7 @@ module.exports = {
         id:req.params.id
       }
     }).catch(err=>res.status(400).send({message:err}))
+    
     if(projectInfo.dataValues.manager_id != id){
       return res.status(400).send({message:"invalid user tried to update"});
     }
@@ -427,6 +428,37 @@ module.exports = {
           }
         }
       ).catch(err=>res.status(400).send({message:err}));
+    }
+
+    //새로 추가되거나 제거된 contributer가 있으면 추가/제거
+    const newContributerAdd = async (ele) => {
+      await contributer.create({
+        project_id:req.params.id,
+        user_id:ele.id
+      }).catch(err=>{
+        console.log(err);
+        return res.status(400).send({message:"new Contributer add failed"});
+      })
+    }
+    const deleteContributer = async (ele) => {
+      await contributer.destroy({
+        where:{
+          project_id:req.params.id,
+          user_id:ele.id
+        }
+      }).catch(err=>{
+        return res.status(400).send({message:"delete Contributer failed"})
+      })
+    }
+    if(body.newContributer){
+      body.newContributer.map(ele=>{
+        newContributerAdd(ele);
+      })
+    }
+    if(body.delContributer){
+      body.delContributer.map(ele=>{
+        deleteContributer(ele);
+      })
     }
 
     //응답 (accessToken 분기)
