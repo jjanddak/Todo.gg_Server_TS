@@ -278,7 +278,7 @@ module.exports = {
   GitHub_SignUpNLogin : async (req,res) => {
     const body = req.body.data;
     let userinfo;
-    const gitName = body.name!=="" ? body.name : "GithubName"+body.id;
+    const gitName = body.name ? body.name : "GithubName"+body.id;
     // const userinfo = await user.findOrCreate({
     //   where : {
     //     email : body.id,
@@ -338,7 +338,7 @@ module.exports = {
     if(!userinfo){
       res.status(400).send({message:"signUp or login failed"})
     } else {
-      res.status(200).send({accessToken:accesstoken , message:"github login success"})
+      res.status(200).send({userinfo:userinfo, accessToken:accesstoken , message:"github login success"})
     }
   },
 
