@@ -536,13 +536,6 @@ module.exports = {
           project_id : req.params.id,
           state:"todo"
         })
-        await contributer.create({
-          taskCard_id : newtaskcard.dataValues.id,
-          user_id : userInfo.id
-        }).catch(err => {console.log(err)})
-
-      
-      
      if(!newtaskcard){
      res.status(400).send({message:"taskCard add failed"})
     } else {
@@ -610,7 +603,7 @@ module.exports = {
       content : body.content
     },{
       where : {
-        id : req.params.id
+        id : body.id
       }
     }).catch(err => {console.log(err)})
 
@@ -692,8 +685,8 @@ module.exports = {
     }
     const body = req.body
     const addUser = await contributer.create({
-      user_id : body.user_id,
-      taskCard_id : body.taskCard_id
+      user_id : body.userId,
+      taskCard_id : body.taskCardId
     }).catch(err => {console.log(err)})
     if(addUser){
       res.status(200).send({message:"contributer added"})
