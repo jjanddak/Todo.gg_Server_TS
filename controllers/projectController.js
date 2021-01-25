@@ -90,7 +90,7 @@ module.exports = {
         },
         {
           model:taskCard,
-          attributes:["id","project_id","content","state"],
+          attributes:["id","project_id","content","state","position"],
           include:[{
             model:contributer,
             attributes:["id","project_id","taskCard_id","user_id"],
@@ -534,6 +534,7 @@ module.exports = {
         const newtaskcard = await taskCard.create({
           content : req.body.content,
           project_id : req.params.id,
+          position : req.body.position,
           state:"todo"
         })
      if(!newtaskcard){
@@ -743,21 +744,25 @@ module.exports = {
       }
     }
     const body = req.body
-    const updateState = await taskCard.update({
-      state : body.state
-    },{
-      where : {
-        id : body.id
-      }
-    }).catch(err => {console.log(err)})
-    if(!updateState){
-      res.status(400).send({message:"taskCard update failed"})
-    } else {
-      if(userInfo){
-        res.status(200).send({message:"taskCard state updated", accessToken:userInfo.newAccessToken})
-      }else{
-        res.status(200).send({message:"taskCard state updated"})
-      }
+    const changeState = async (id, state, position) => {
+      return await taskCard.update({
+        state : state,
+        position : position
+      },{
+        where : {
+          id : id
+        }
+      }).catch(err => {res.status(400).send({message:"taskCard state update failed"})});
+    }
+
+    body.taskCards.map(ele=>{
+      changeState(ele.id, ele.state, ele.position);
+    });
+    
+    if(userInfo){
+      res.status(200).send({message:"taskCard state updated", accessToken:userInfo.newAccessToken})
+    }else{
+      res.status(200).send({message:"taskCard state updated"})
     }
   },
 
