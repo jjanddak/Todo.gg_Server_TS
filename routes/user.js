@@ -32,6 +32,9 @@ router.post("/getOne", userController.GetUserInfo);
 //POST user/checkPassword
 router.post("/checkPassword", userController.checkPassWord);
 
+//POST user/googleLogin
+router.post("/googleLogin", userController.GoogleLogin );
+
 //POST user/LogOut
 router.post("/logout", userController.logout)
 
