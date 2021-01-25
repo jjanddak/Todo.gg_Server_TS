@@ -18,7 +18,8 @@ module.exports = (sequelize, DataTypes) => {
   taskCard.init({
     project_id: DataTypes.INTEGER,
     content: DataTypes.STRING,
-    state: DataTypes.STRING
+    state: DataTypes.STRING,
+    position: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'taskCard',
