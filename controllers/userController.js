@@ -121,7 +121,7 @@ module.exports = {
     //3. DB 조작
     await user.findOne({
       where:{
-        id:id
+        email:userInfo.email
       },
       attributes:["id","username","email","profile"],
       include: [
