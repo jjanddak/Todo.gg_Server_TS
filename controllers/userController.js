@@ -1,16 +1,13 @@
 require('dotenv').config();
+const  SHA256  = require("./SHA256")
 const { user, project, contributer, taskCard } = require("../models");
 const Sequelize = require("sequelize");
 const jwt = require('jsonwebtoken');
 const Op = Sequelize.Op;
-
-// const GithubStrategy = require("passport-github");
-// const GoogleStrategy = require("passport-google");
 const Git_clientID = process.env.GITHUB_CLIENT_ID;
 const Git_clientSecret = process.env.GITHUB_CLIENT_SECRET;
-const Google_clientID = process.env.GOOGLE_CLIENT_ID;
-const Google_clientSecret = process.env.GOOGLE_CLIENT_SECRET
 const axios = require('axios');
+
 
 
 module.exports = {
@@ -119,11 +116,12 @@ module.exports = {
       }
     }
 
-    const {email} = userInfo;
+    const {id} = userInfo;
+  
     //3. DB 조작
     await user.findOne({
       where:{
-        email:email
+        id:id
       },
       attributes:["id","username","email","profile"],
       include: [
@@ -406,7 +404,8 @@ module.exports = {
         profile : body.avatar_url        
       })
     }
-    
+    console.log(body.login)
+
     const accesstoken=jwt.sign({
       id:userinfo.id,
       email:userinfo.email,
@@ -442,13 +441,60 @@ module.exports = {
     }
   },
 
-  Google_SocialLogin : (req, res) => {
-    axios.post("https://accounts.google.com/o/oauth2/v2/auth", {
-      client_id : Google_clientID,
-      client_secret : Google_clientSecret,
-      code : req.body.authorizationCode,
-      callbackURL : "https://localhost:4001/auth/google/callback"
-    })
+  GoogleLogin : async (req,res) => {
+     let userinfo
+     const body = req.body
+     let findUser = await user.findOne({
+       where:{
+         username:body.username
+       }
+     })
+
+     if(findUser){
+       userinfo=findUser;
+     }else{ //새로가입해야함
+       userinfo=await user.create({
+         username : body.username,
+         email : body.email,
+         profile : body.profile,
+         password : SHA256(body.password)       
+       })
+     }
+
+    const accesstoken=jwt.sign({
+      id:userinfo.id,
+      email:userinfo.email,
+      profile:userinfo.profile,
+      username:userinfo.username,
+      createdAt:userinfo.createdAt,
+      updatedAt:userinfo.updatedAt,
+      iat:Math.floor(Date.now() / 1000),
+      exp:Math.floor(Date.now() / 1000) + (60 * 60*24)
+    },process.env.ACCESS_SECRET);
+
+    const refreshtoken=jwt.sign({
+      id:userinfo.id,
+      email:userinfo.email,
+      profile:userinfo.profile,
+      username:userinfo.username,
+      createdAt:userinfo.createdAt,
+      updatedAt:userinfo.updatedAt,
+      iat:Math.floor(Date.now() / 1000),
+      exp:Math.floor(Date.now() / 1000) + (60 * 60*24*30)
+    },process.env.REFRESH_SECRET);
+
+    res.cookie('refreshToken', refreshtoken, {
+      secure: true,
+      httpOnly: true,
+      sameSite:'none',
+    });
+
+    if(!userinfo){
+      res.status(400).send({message : "cant login"})
+    } else {
+      res.status(200).send({userinfo:userinfo, accessToken:accesstoken , message:"google login success"})
+    }
+
   },
   
   DeleteUser : async (req, res) => {
