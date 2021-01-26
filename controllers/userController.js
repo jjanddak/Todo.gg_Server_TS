@@ -171,6 +171,9 @@ module.exports = {
       ]
     })
     .then((data)=>{
+      if(!data){
+        return res.send({projectList:{id:'',username:'',email:'',profile:'',contributers:[],taskCardCount:[]}})
+      }
       delete data.dataValues.password;
       let taskCardsArr=[];
 
