@@ -302,7 +302,7 @@ module.exports = {
       const addContributers = async (member) => {
         await contributer.create({
           project_id:projectInfo.dataValues.id,
-          user_id:member.id
+          user_id:member.user.id
         }).catch(err=>res.status(400).send({message : "add member failed"}));
       }
       //req.body에 member가 있을 때만 추가
