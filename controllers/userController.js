@@ -527,29 +527,24 @@ module.exports = {
           email : userInfo.email
         }
       }).catch(err=>{console.log(err)})
-      if(userInfo.refreshToken){
-        const accesstoken=jwt.sign({
-          id:userInfo.id,
-          email:userinfo.email,
-          profile:userinfo.profile,
-          username:userinfo.username,
-          createdAt:userinfo.createdAt,
-          updatedAt:userinfo.updatedAt,
-          iat:Math.floor(Date.now() / 1000),
-          exp:Math.floor(Date.now() / 1000) + (60 * 60*24)
-        },process.env.ACCESS_SECRET);
-        userinfo.accessToken = accesstoken
-      }
+
+      //항상 엑세스 토큰 새로 발급
+      const accesstoken=jwt.sign({
+        id:userInfo.id,
+        email:userinfo.email,
+        profile:userinfo.profile,
+        username:userinfo.username,
+        createdAt:userinfo.createdAt,
+        updatedAt:userinfo.updatedAt,
+        iat:Math.floor(Date.now() / 1000),
+        exp:Math.floor(Date.now() / 1000) + (60 * 60*24)
+      },process.env.ACCESS_SECRET);
+      userinfo.accessToken = accesstoken
 
       if(result[0]!==1){
         res.status(400).send({message:"update failed"})
       } else {
-        body.username = userinfo.username
-        if(userInfo.refreshToken === true){
-          res.status(200).send({message:"userinfo updated",username:userinfo.username,profile:userinfo.profile,accessToken:userinfo.accessToken})
-        }else{
-          res.status(200).send({message:"userinfo updated",username:userinfo.username,profile:userinfo.profile})
-        }
+        res.status(200).send({message:"userinfo updated",username:userinfo.username,profile:userinfo.profile,accessToken:userinfo.accessToken})
       }
   },
   
