@@ -349,7 +349,7 @@ module.exports = {
      const body = req.body
      let findUser = await user.findOne({
        where:{
-         username:body.username
+         email:body.email
        }
      })
 
