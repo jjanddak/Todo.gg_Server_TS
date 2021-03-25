@@ -64,6 +64,17 @@ module.exports = {
     }
   },
 
+  SignUp : async (req, res) => {
+    const body = req.body;
+    await user.create({
+      profile:body.profile,
+      email: body.email,
+      password: body.password,
+      username: body.username,
+    }).catch(err=>res.status(400).send(err));
+    res.status(200).json({message:"signup success"});
+	},
+  
   // getProjectList: async (req, res) => {
   //   let authorization = req.headers["authorization"];
   //   const accessToken=authorization.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
@@ -220,16 +231,6 @@ module.exports = {
   //   .catch((err)=>console.log(err));
   // },
   
-  SignUp : async (req, res) => {
-    const body = req.body;
-    await user.create({
-      profile:body.profile,
-      email: body.email,
-      password: body.password,
-      username: body.username,
-    }).catch(err=>res.status(400).send(err));
-    res.status(200).json({message:"signup success"});
-	},
 	// CheckEmail: async (req, res) => {
 	// 	const body = req.body;
 	// 	const email = await user.findOne({
