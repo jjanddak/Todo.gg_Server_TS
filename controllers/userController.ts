@@ -64,7 +64,7 @@ module.exports = {
     }
   },
 
-  SignUp : async (req, res) => {
+  SignUp : async (req: Request, res: Response) => {
     const body = req.body;
     await user.create({
       profile:body.profile,

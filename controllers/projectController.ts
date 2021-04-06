@@ -5,16 +5,29 @@ const jwt = require('jsonwebtoken');
 
 const axios = require('axios');
 
+interface userInfo {
+  id: string,
+  username: string,
+  profile: string,
+  email: string,
+  createdAt: string,
+  updatedAt: string,
+  newAccessToken: null | string
+}
+
 export = {
   getOneProject: async (req: Request, res: Response) => {
     let authorization:string|undefined = req.headers["authorization"];
     //옵셔널체이닝 사용 ( ? )
-    const accessToken=authorization?.split(" ")[1]; //0번인덱스는 'Bearer' 1번이 토큰정보
+    const accessToken=authorization?.split(" ")[1]; 
+    // authorization이 null일 수도 있음을 옵셔널체이닝으로 
     
     //1. 엑세스토큰이 유효한지 확인
-    let userInfo;
-    let newAccessToken;
-    let verifyAccessToken = () => {
+    let userInfo:userInfo;
+    let newAccessToken:string;
+
+    // jwt Token의 type을 무엇으로 해야할지??
+    const verifyAccessToken = (accessToken) => {
       if(!accessToken){
         return null;
       }
@@ -25,7 +38,7 @@ export = {
       }
     }
     
-    userInfo=verifyAccessToken();
+    userInfo=verifyAccessToken(accessToken);
 
     //1-1. 엑세스 토큰이 만료되었을 때
     if(!userInfo){
@@ -34,7 +47,7 @@ export = {
         return res.status(400).json({data: null, message: 'refresh token not provided'})
       }
       //2. refresh token이 유효한지, 서버가 가지고 있는 비밀 키로 생성한 것이 맞는지 확인합니다.
-      let verifyToken = (token) => {
+      let verifyRefreshToken = (token) => {
         if(!token){
           return null;
         }
@@ -44,7 +57,7 @@ export = {
           return null;
         }
       }
-      userInfo=verifyToken(cookieToken);
+      userInfo=verifyRefreshToken(cookieToken);
       newAccessToken=jwt.sign({
         id:userInfo.id,
         username:userInfo.username,
